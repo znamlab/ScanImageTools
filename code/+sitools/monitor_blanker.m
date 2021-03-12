@@ -62,7 +62,7 @@ classdef monitor_blanker < sitools.si_linker
         % These settings can not be changed on the fly 
 
         taskName = 'monitorblanker_DO' % Name for the digital task
-        devName = 'galvo' % Name of the DAQ device to which we will connect
+        devName = 'vDAQ' % Name of the DAQ device to which we will connect
 
         % Channel parameters
         monitorBlank_DO_Line = 'port0/line1'
