@@ -200,7 +200,7 @@ classdef osc_receiver < sitools.si_linker
                 return
             end
             switch obj.hSI.acqState 
-                case {'focus','loop', 'acq'}
+                case {'focus','loop', 'grab'}
             msg = obj.hListener.getMessageArgumentsAsString();
             if ~isempty(msg)
                 fprintf('The last message received was %s\n', msg)
