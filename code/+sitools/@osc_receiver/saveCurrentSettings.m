@@ -17,10 +17,13 @@ function saveCurrentSettings(obj,fname)
     %
     % Example
     % obj.saveCurrentSettings('myFileName')
-
-    metaData.port_number = obj.port_number;
+    
     metaData.fname = obj.fname;
+    metaData.port_number = obj.port_number;
     metaData.address = obj.address;
+    metaData.addDateTime = obj.addDateTime;
+    metaData.verbosity = obj.verbosity;
+    metaData.rootPath = obj.rootPath;
 
     save(fname,'metaData')
 

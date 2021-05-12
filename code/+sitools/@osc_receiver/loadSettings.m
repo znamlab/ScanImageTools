@@ -40,7 +40,7 @@ function loadSettings(obj,fname)
     end
 
 
-    fieldsToApply = {'port_number', 'address'};
+    fieldsToApply = {'port_number', 'address', 'addDateTime', 'verbosity', 'rootPath'};
     n=0;
 
     for ii=1:length(fieldsToApply)

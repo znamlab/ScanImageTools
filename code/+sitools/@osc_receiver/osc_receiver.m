@@ -69,8 +69,8 @@ classdef osc_receiver < sitools.si_linker
         port_number = 2323;
         address = '/si_fname';
         addDateTime = false;
-        createSubDir = false;
-        filePath = {};
+        verbosity = 1;
+        rootPath = 'E:\Data';
         
     end 
 
@@ -106,34 +106,48 @@ classdef osc_receiver < sitools.si_linker
             end %if success
         end %constructor
 
-        function changeFileName(obj, fileName)
+        function changeFileName(obj, messageText)
             if isempty(obj.hSI)
                 return
             end
             hSI = obj.hSI;
-
-            if ~isempty(obj.filePath)
-                % Optionally set the file path
-                if ~exist(obj.filePath,'dir')
-                    fprintf('Can not find directory %s. Will not set the save path\n', obj.filePath)
-                else
-                    hSI.hScan2D.logFilePath = obj.filePath;
+            
+            % parse message to find file name and path
+            pathPieces = strsplit(messageText, '/');
+            fileName = pathPieces{end};
+            if numel(pathPieces) > 1
+                setPath = true;
+                pathPieces = pathPieces(1:end-1);
+                fullPath = strjoin([obj.rootPath , pathPieces], filesep);
+                if exist(fullPath, 'file')
+                    fprintf('Target path `%s` is an existing file\n', fullPath)
+                    fprintf('Will not change the path\n')
+                    setPath = false;
+                end
+                [ok, message, ~] = mkdir(fullPath);
+                if ~ok
+                    setPath = false;
+                    fprintf('Error while creating directory: %s\n', message)
+                    fprintf('Will not change the path\n')
+                end
+                if setPath
+                    if obj.verbosity
+                        fprintf('Changing save directory to: %s\n', fullPath)
+                    end
+                    hSI.hScan2D.logFilePath = fullPath;
                 end
             end
             
             if obj.addDateTime
-                hSI.hScan2D.logFileStem = strcat(datestr(now ,'yyyymmdd_HHMMSS_'), fileName);
-            else
-                hSI.hScan2D.logFileStem = fileName;
+                fileName = strcat(datestr(now ,'yyyymmdd_HHMMSS_'), fileName);
             end
-    
-            if obj.createSubDir
-                saveDir = fullfile(hSI.hScan2D.logFilePath, hSI.hScan2D.logFileStem);
-                if ~exist(saveDir,'dir')
-                    mkdir(saveDir)
-                end
-                hSI.hScan2D.logFilePath = saveDir;
-            end %if createSubDir
+            
+            if obj.verbosity
+                fprintf('Changing file name to: %s\n', fileName)
+            end
+            hSI.hScan2D.logFileStem = fileName;
+
+            
         end %changeFileName
         
         function varargout=createServer(obj)
@@ -174,12 +188,14 @@ classdef osc_receiver < sitools.si_linker
 
         function delete(obj)
             fprintf('sitools.osc_receiver is shutting down\n')
+            fprintf('This will throw a SocketException that matlab does not manage to catch\n')
             if ~isempty(obj.hReceiver)
                 obj.hReceiver.stopListening();
                 obj.hReceiver.close();
             end
             %delete(receiver);
             cellfun(@delete,obj.listeners)
+            fprintf('sitools.osc_receiver is closed\n')
         end % destructor
 
 
@@ -192,26 +208,33 @@ classdef osc_receiver < sitools.si_linker
             % If ScanImage is connected and it starts imaging then
             % the file name is changed starts.
             if isempty(obj.hSI)
-                fprintf('No link to scanimage. Do nothing\n')
+                if obj.verbosity
+                    fprintf('No link to scanimage. Do nothing\n')
+                end
                 return
             end
             if isempty(obj.hReceiver)
-                fprintf('Server not started. Do nothing\n')
+                if obj.verbosity
+                    fprintf('Server not started. Do nothing\n')
+                end
                 return
             end
             switch obj.hSI.acqState 
                 case {'focus','loop', 'grab'}
-            msg = obj.hListener.getMessageArgumentsAsString();
-            if ~isempty(msg)
-                fprintf('The last message received was %s\n', msg)
-                fprintf('Changing file name\n')
-                obj.changeFileName(char(msg))
-            else
-                fprintf('There was no OSC message\n')
-            end
-            case 'idle'
-                % do nothing for now
-                fprintf('idle\n')
+                    msg = obj.hListener.getMessageArgumentsAsString();
+                    if ~isempty(msg)
+                        if obj.verbosity > 1
+                            fprintf('The last message received was %s\n', msg)
+                            fprintf('Changing file name\n')
+                        end
+                        obj.changeFileName(char(msg))
+                    else
+                        if obj.verbosity
+                            fprintf('There was no OSC message\n')
+                        end
+                    end
+                case 'idle'
+                    % do nothing for now
             end
         end % startStopAcqWithScanImage
 
