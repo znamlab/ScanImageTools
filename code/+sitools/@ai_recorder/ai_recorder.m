@@ -648,8 +648,8 @@ classdef ai_recorder < sitools.si_linker
     methods
         function set.numPointsInPlot(obj,val)
             if val < obj.sampleRate
-                fprintf('numPointsInPlot can not be smaller than the sample rate. Setting to the sample rate\n');
-                obj.numPointsInPlot = obj.sampleRate;
+                fprintf('numPointsInPlot should not be smaller than the sample rate. Trying to do it anyway\n');
+                obj.numPointsInPlot = val; %obj.sampleRate;
             else
                 obj.numPointsInPlot=val;
             end
